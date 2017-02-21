@@ -6,9 +6,9 @@ This is a small programming language I make for fun.
 See LICENSE.txt
 
 ###Examples
-´´´
+```
 main = {
 	a = 10
 	b = 20
 }
-´´´
+```
