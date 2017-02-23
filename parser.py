@@ -7,11 +7,16 @@ BOOL = 3
 FLOAT = 4
 ARRAY = 5
 FUNCTION = 6
+CALCULATION = 7
 
 class node:
 	def __init__(self, t, value):
 		self.type = t
 		self.value = value
+
+		if self.type == NAME:
+			if self.value in ["true", "false"]:
+				self.type = BOOL
 
 	def __str__(self):
 		if type(self.value) == type([]):
@@ -60,6 +65,8 @@ def parse(string):
 							is_number = False
 							number_mode = 0
 						elif number_mode == 1:
+							if my_number.endswith("."):
+								my_number += "0"
 							data.append(node(FLOAT, my_number))
 							is_number = False
 							number_mode = 0
@@ -67,6 +74,8 @@ def parse(string):
 					if number_mode == 0:
 						data.append(node(NUMBER, my_number))
 					elif number_mode == 1:
+						if my_number.endswith("."):
+							my_number += "0"
 						data.append(node(FLOAT, my_number))
 					number_mode = 0
 					is_number = False
@@ -85,7 +94,7 @@ def parse(string):
 
 					if i+1 < len(string):
 						t = string[i+1]
-						if t in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+						if t in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]:
 							is_number = True
 						else:
 							if number_mode == 0:
@@ -114,6 +123,13 @@ def parse(string):
 					my_name = ""
 					block_type = 1
 					z += 1
+				elif token == "[":
+					if my_name != "":
+						data.append(node(NAME, my_name))
+
+					my_name = ""
+					block_type = 2
+					z += 1
 				elif token in " \n\t":
 					if my_name != "":
 						data.append(node(NAME, my_name))
@@ -126,14 +142,14 @@ def parse(string):
 						data.append(node(NAME, my_name))
 		else:
 			if block_type == 0:
-				if token in ")}":
+				if token in ")}]":
 					z -= 1
 					if z == 0:
 						data.append(node(ARRAY, parse(my_name)))
 						my_name = ""
 					else:
 						my_name += token
-				elif token in "({":
+				elif token in "([{":
 					z += 1
 					my_name += token
 				else:
@@ -143,14 +159,14 @@ def parse(string):
 					if my_name != "":
 						data.append(node(ARRAY, parse(my_name)))
 			elif block_type == 1:
-				if token in ")}":
+				if token in ")}]":
 					z -= 1
 					if z == 0:
 						data.append(node(FUNCTION, parse(my_name)))
 						my_name = ""
 					else:
 						my_name += token
-				elif token in "({":
+				elif token in "[({":
 					z += 1
 					my_name += token
 				else:
@@ -159,5 +175,23 @@ def parse(string):
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
 						data.append(node(FUNCTION, parse(my_name)))
+			elif block_type == 2:
+				if token in "])}":
+					z -= 1
+					if z == 0:
+						data.append(node(CALCULATION, parse(my_name)))
+						my_name = ""
+					else:
+						my_name += token
+				elif token in "[({":
+					z += 1
+					my_name += token
+				else:
+					my_name += token
+
+				if i == len(string)-1 and z != 0:
+					if my_name != "":
+						data.append(node(CALCULATION, parse(my_name)))
+
 
 	return data
