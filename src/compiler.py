@@ -1,8 +1,13 @@
 import utils, copy
 from parser import *
 
-def throw_error(string):
-	print("ERROR: " + string)
+def throw_error(name, line, s = ""):
+	print("[" + name + " error][line " + str(line) + "] " + s)
+	a = input("exit (y/n)? ")
+	if a.lower().strip() in ["y", "yes", "yea"]:
+		exit()
+	else:
+		pass
 
 class var:
 	def __init__(self, t, name):
@@ -37,16 +42,24 @@ def compile(data, char="\n", names = {}):
 								if names[next_node_2.value].type == names[my_node.value].type:
 									output.append(my_node.value + " = " + str(next_node_2.value) + ";")
 									i += 2
+								else:
+									throw_error("type", my_node.line)
+							else:
+								throw_error("undefined name", next_node_2.line, "\"" + next_node_2.value + "\"")
 						else:
 							if names[my_node.value].type == t:
 								if t == FLOAT:
 									output.append(my_node.value + " = " + str(next_node_2.value) + "f;")
 								elif t == NUMBER or t == BOOL or t == STR:
 									output.append(my_node.value + " = " + str(next_node_2.value) + ";")
+								elif t == FUNCTION:
+									throw_error("override function", my_node.line)
 								i += 2
 							elif t == CALCULATION:
 								out, out_t = compile_calculation(next_node_2.value, copy.deepcopy(names))
 								output.append(my_node.value + " = " + out + ";")
+							else:
+								throw_error("type", my_node.line)
 
 					else:
 						t = next_node_2.type
@@ -66,7 +79,8 @@ def compile(data, char="\n", names = {}):
 											pass
 											#out, names = compile_call_function(next_node, next_node_2, next_node_3, names)
 											#TODO
-
+							else:
+								throw_error("undefined name", next_node_2.line, "\"" + next_node_2.value + "\"")
 
 						else:
 							if t == FUNCTION:
@@ -168,6 +182,8 @@ def compile_calculation(data, names = {}, char = " "):
 					output.append(my_node.value)
 				if names[my_node.value].type == NUMBER:
 					output.append(my_node.value)
+			else:
+				throw_error("undefined name", my_node.line, "\"" + my_node.value + "\"")
 		elif my_node.type == CALCULATION:
 			out, out_t = compile_calculation(my_node.value, names = names)
 			output.append("(" + out + ")")
