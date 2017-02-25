@@ -1,6 +1,8 @@
 *~
 *.pyc
 *.out
+
 __pycache__/
-code.txt
-output.cpp
+src/code.txt
+src/output.cpp
+src/__pycache__/
