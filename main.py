@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	print()
 
 	out = compile(data)
-	out = "#include <iostream>\n\n" + out
+	out = "#include <iostream>\n#include <string>\n\n" + out
 	print(out)
 
 	utils.save_file("output.cpp", out)
