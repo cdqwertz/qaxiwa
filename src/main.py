@@ -4,7 +4,7 @@ from compiler import *
 
 if __name__ == "__main__":
 	string = utils.load_file("code.txt")
-	data = parse(string)
+	data = parse(string, True)
 
 	s = []
 	for my_node in data:
@@ -13,7 +13,9 @@ if __name__ == "__main__":
 	print("[" + ", ".join(s) + "]")
 	print()
 
-	out = compile(data)
+	names = {"while" : var(FUNCTION, "while"), "if" : var(FUNCTION, "if"), "return" : var(FUNCTION, "return")}
+
+	out = compile(data, names = names)
 	out = "#include <iostream>\n#include <string>\n\n" + out
 	print(out)
 

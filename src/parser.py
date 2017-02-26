@@ -9,6 +9,8 @@ ARRAY = 5
 FUNCTION = 6
 CALCULATION = 7
 
+line = 1
+
 class node:
 	def __init__(self, t, value, line = -1):
 		self.type = t
@@ -28,7 +30,12 @@ class node:
 		else:
 			return str(self.type) + ":" + str(self.value)
 
-def parse(string):
+def parse(string, count = False):
+	global line
+
+	if count:
+		line = 1
+
 	data = []
 	is_str = False
 	my_str = ""
@@ -40,8 +47,6 @@ def parse(string):
 
 	z = 0
 	block_type = 0
-
-	line = 1
 
 	for i, token in enumerate(string):
 		if z == 0:
@@ -158,7 +163,7 @@ def parse(string):
 				if token in ")}]":
 					z -= 1
 					if z == 0:
-						data.append(node(ARRAY, parse(my_name), line))
+						data.append(node(ARRAY, parse(my_name, False), line))
 						my_name = ""
 					else:
 						my_name += token
@@ -170,12 +175,12 @@ def parse(string):
 
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
-						data.append(node(ARRAY, parse(my_name), line))
+						data.append(node(ARRAY, parse(my_name, False), line))
 			elif block_type == 1:
 				if token in ")}]":
 					z -= 1
 					if z == 0:
-						data.append(node(FUNCTION, parse(my_name), line))
+						data.append(node(FUNCTION, parse(my_name, False), line))
 						my_name = ""
 					else:
 						my_name += token
@@ -187,12 +192,12 @@ def parse(string):
 
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
-						data.append(node(FUNCTION, parse(my_name), line))
+						data.append(node(FUNCTION, parse(my_name, False), line))
 			elif block_type == 2:
 				if token in "])}":
 					z -= 1
 					if z == 0:
-						data.append(node(CALCULATION, parse(my_name), line))
+						data.append(node(CALCULATION, parse(my_name, False), line))
 						my_name = ""
 					else:
 						my_name += token
@@ -204,9 +209,9 @@ def parse(string):
 
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
-						data.append(node(CALCULATION, parse(my_name), line))
+						data.append(node(CALCULATION, parse(my_name, False), line))
 
-		if token == "\n":
+		if token == "\n" and count:
 			line += 1
 
 	return data

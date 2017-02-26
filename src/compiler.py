@@ -10,9 +10,11 @@ def throw_error(name, line, s = ""):
 		pass
 
 class var:
-	def __init__(self, t, name):
+	def __init__(self, t, name, params = {}, output = -1):
 		self.name = name
 		self.type = t
+		self.params = params
+		self.output = output
 
 def compile(data, char="\n", names = {}):
 	output = []
@@ -30,8 +32,22 @@ def compile(data, char="\n", names = {}):
 		if i+2 < len(data):
 			next_node_2 = data[i+2]
 
+		next_node_3 = None
+		if i+3 < len(data):
+			next_node_3 = data[i+3]
+
 		if my_node.type == NAME:
-			if next_node and next_node.type == NAME and next_node.value == "=":
+			if my_node.value.startswith("@"):
+				if next_node and next_node.type == STR:
+					if my_node.value == "@cpp":
+						output.append(next_node.value)
+					elif my_node.value == "@load":
+						output.append("#include \"" + next_node.value + "\"")
+					elif my_node.value == "@import":
+						output.append("#include <" + next_node.value + ">")
+
+					i += 1
+			elif next_node and next_node.type == NAME and next_node.value == "=":
 				if next_node_2:
 					t = next_node_2.type
 
@@ -76,9 +92,8 @@ def compile(data, char="\n", names = {}):
 									if i+3 < len(data):
 										next_node_3 = data[i+3]
 										if next_node_3.type == ARRAY:
-											pass
-											#out, names = compile_call_function(next_node, next_node_2, next_node_3, names)
-											#TODO
+											out, names, out_t = compile_call_function(next_node, next_node_2, next_node_3, names)
+											output.append(compile_var(out_t, my_node.value, out, True, True))
 							else:
 								throw_error("undefined name", next_node_2.line, "\"" + next_node_2.value + "\"")
 
@@ -100,8 +115,43 @@ def compile(data, char="\n", names = {}):
 								names[my_node.value] = var(out_t, my_node.value)
 								output.append(compile_var(out_t, my_node.value, out, True, True))
 			elif next_node and next_node.type == ARRAY:
-				out, names = compile_call_function(my_node, next_node, next_node_2, names)
-				output.append(out)
+				next_node_4 = None
+				if i+4 < len(data):
+					next_node_4 = data[i+4]
+
+				next_node_5 = None
+				if i+5 < len(data):
+					next_node_5 = data[i+5]
+
+				c1 = next_node_2 and next_node_2.type == NAME and next_node_2.value == ":"
+				c2 = next_node_3 and next_node_3.type == NAME and get_type(next_node_3.value)[1]
+				c3 = next_node_4 and next_node_4.type == NAME and next_node_4.value == "="
+
+
+				if c1 and c2 and c3 and next_node_5 and next_node_5.type == FUNCTION:
+					out, params = compile_params(next_node.value)
+
+					n = copy.deepcopy(names)
+					for j in params.keys():
+						n[params[j].name] = params[j]
+
+					output.append(get_type(next_node_3.value)[0] + " " + my_node.value + "(" + out + ") {\n" + compile(next_node_5.value, names = n) + "\n}")
+					names[my_node.value] = var(FUNCTION, my_node.value, params, get_type(next_node_3.value)[1])
+					i += 3
+
+				elif next_node_2 and next_node_2.type == NAME and next_node_2.value == "=" and next_node_3 and next_node_3.type == FUNCTION:
+					out, params = compile_params(next_node.value)
+
+					n = copy.deepcopy(names)
+					for j in params.keys():
+						n[params[j].name] = params[j]
+
+					output.append("void " + my_node.value + "(" + out + ") {\n" + compile(next_node_3.value, names = n) + "\n}")
+					names[my_node.value] = var(FUNCTION, my_node.value, params)
+					i += 3
+				else:
+					out, names, out_t = compile_call_function(my_node, next_node, next_node_2, names)
+					output.append(out)
 
 		i += 1
 
@@ -141,25 +191,39 @@ def compile_var(t, name, value, new = False, is_name = False):
 
 	return out + ";"
 
-def compile_call_function(my_node, next_node, next_node_2, names):
+def compile_call_function(my_node, next_node, next_node_2, names, end = ";"):
 	out = ""
+	output_type = -1
 	if my_node.value == "print":
-		out = "std::cout << " + compile_array(next_node.value, names = copy.deepcopy(names), char= " << ") + " << std::endl;"
+		out = "std::cout << " + compile_array(next_node.value, names = copy.deepcopy(names), char= " << ") + " << std::endl" + end
+	elif my_node.value == "write":
+		out = "std::cout << " + compile_array(next_node.value, names = copy.deepcopy(names), char= " << ") + end
 	elif my_node.value == "read":
-		out = "std::cin >> " + compile_array(next_node.value, names = copy.deepcopy(names), char= " >> ") + ";"
+		out = "std::cin >> " + compile_array(next_node.value, names = copy.deepcopy(names), char= " >> ") + end
 	else:
-		func = None
-		if next_node_2 and next_node_2.type == FUNCTION:
-			func = "{\n" + compile(next_node_2.value, names = copy.deepcopy(names)) + "\n}"
+		if my_node.value in names:
+			if names[my_node.value].type == FUNCTION:
+				func = None
+				if next_node_2 and next_node_2.type == FUNCTION:
+					func = "{\n" + compile(next_node_2.value, names = copy.deepcopy(names)) + "\n}"
 
-		params = compile_array(next_node.value, names = copy.deepcopy(names))
+				n = copy.deepcopy(names)
+				params = compile_array(next_node.value, names = n)
 
-		if func:
-			out = my_node.value + "(" + params + ") " + func
+				if func:
+					out = my_node.value + "(" + params + ") " + func
+				else:
+					out = my_node.value + "(" + params + ")" + end
+
+			elif names[my_node.value].type == STR:
+				out = my_node.value + ".c_str()[" + compile_array(next_node.value, names = copy.deepcopy(names), char= "][") + "]" + end
+				#TODO
+			else:
+				throw_error("type", my_node.line)
 		else:
-			out = my_node.value + "(" + params + ");"
+			throw_error("undefined function/name", my_node.line, "\"" + my_node.value + "\"")
 
-	return out, names
+	return out, names, output_type
 
 def compile_calculation(data, names = {}, char = " "):
 	output = []
@@ -171,10 +235,15 @@ def compile_calculation(data, names = {}, char = " "):
 		if my_node.type == NAME:
 			if my_node.value in ["+", "-", "*", "/", "%", "==", "!=", "<", ">"]:
 				output.append(my_node.value)
+
+				if my_node.value in ["==", "!=", "<", ">"]:
+					output_type = BOOL
 			elif my_node.value == "and":
 				output.append("&&")
+				output_type = BOOL
 			elif my_node.value == "or":
 				output.append("||")
+				output_type = BOOL
 			elif my_node.value in names:
 				print("NAME ", my_node.value, " TYPE ", names[my_node.value].type)
 				if names[my_node.value].type == FLOAT:
@@ -182,6 +251,11 @@ def compile_calculation(data, names = {}, char = " "):
 					output.append(my_node.value)
 				if names[my_node.value].type == NUMBER:
 					output.append(my_node.value)
+				if names[my_node.value].type == STR:
+					output.append(my_node.value)
+
+					if output_type == NUMBER or output_type == FLOAT:
+						output_type = STR
 			else:
 				throw_error("undefined name", my_node.line, "\"" + my_node.value + "\"")
 		elif my_node.type == CALCULATION:
@@ -192,6 +266,11 @@ def compile_calculation(data, names = {}, char = " "):
 				output_type = FLOAT
 		elif my_node.type == NUMBER:
 			output.append(my_node.value)
+		elif my_node.type == STR:
+			output.append("\"" + my_node.value + "\"")
+
+			if output_type == NUMBER or output_type == FLOAT:
+				output_type = STR
 		elif my_node.type == FLOAT:
 			output.append(my_node.value + "f")
 			output_type = FLOAT
@@ -213,7 +292,9 @@ def compile_array(data, names = {}, char = ", "):
 
 		if my_node.type == NAME:
 			if next_node and next_node.type == ARRAY:
-				output.append(my_node.value + "(" + compile_array(next_node.value)[0] + ")")
+				out, names, out_t = compile_call_function(my_node, next_node, None, names, end = "")
+				output.append(out)
+				i += 1
 			else:
 				output.append(my_node.value)
 		elif my_node.type == NUMBER:
@@ -229,3 +310,39 @@ def compile_array(data, names = {}, char = ", "):
 		i += 1
 
 	return char.join(output)
+
+def compile_params(data):
+	out = []
+	params = {}
+
+	i = 0
+	while i < len(data):
+		my_node = data[i]
+
+		next_node = None
+		if i+1 < len(data):
+			next_node = data[i+1]
+
+		next_node_2 = None
+		if i+2 < len(data):
+			next_node_2 = data[i+2]
+
+		if next_node and next_node_2:
+			if my_node.type == NAME and next_node.type == NAME and next_node.value == ":" and next_node_2.type == NAME:
+				types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float"}
+				types_2 = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT}
+				if next_node_2.value in types.keys():
+					t = types[next_node_2.value]
+					out.append(t + " " + my_node.value)
+					params[my_node.value] = var(types_2[next_node_2.value], my_node.value)
+				else:
+					throw_error("unknown type", my_node.line, "\"" + next_node_2.value + "\"")
+		i += 1
+
+	return ", ".join(out), params
+
+def get_type(name):
+	types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float"}
+	types_2 = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT}
+	if name in types.keys():
+		return types[name], types_2[name]
