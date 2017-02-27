@@ -200,6 +200,22 @@ def compile_call_function(my_node, next_node, next_node_2, names, end = ";"):
 		out = "std::cout << " + compile_array(next_node.value, names = copy.deepcopy(names), char= " << ") + end
 	elif my_node.value == "read":
 		out = "std::cin >> " + compile_array(next_node.value, names = copy.deepcopy(names), char= " >> ") + end
+	elif my_node.value == "for":
+		if len(next_node.value) > 2:
+			node_var = next_node.value[0]
+			node_from = next_node.value[1]
+			node_to = next_node.value[2]
+
+			if node_var.type == NAME and node_from.type == NUMBER and node_to.type == NUMBER:
+				if next_node_2 and next_node_2.type == FUNCTION:
+					n = copy.deepcopy(names)
+					n[node_var.value] = var(NUMBER, node_var.value)
+					func = "{\n" + compile(next_node_2.value, names = n) + "\n}"
+					out = "for(int " + node_var.value + " = " + node_from.value + ";" + node_var.value + " < " + node_to.value + ";" + node_var.value + "++)" + func
+			else:
+				throw_error("type", my_node.line, "for(var : name from : number to : number)")
+		else:
+			throw_error("type", my_node.line, "Not enough arguments")
 	else:
 		if my_node.value in names:
 			if names[my_node.value].type == FUNCTION:
@@ -332,8 +348,8 @@ def compile_params(data):
 
 		if next_node and next_node_2:
 			if my_node.type == NAME and next_node.type == NAME and next_node.value == ":" and next_node_2.type == NAME:
-				types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float"}
-				types_2 = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT}
+				types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float", "int" : "int"}
+				types_2 = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT, "int" : NUMBER}
 				if next_node_2.value in types.keys():
 					t = types[next_node_2.value]
 					out.append(t + " " + my_node.value)
@@ -345,7 +361,7 @@ def compile_params(data):
 	return ", ".join(out), params
 
 def get_type(name):
-	types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float"}
-	types_2 = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT}
+	types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float", "int" : "int"}
+	types_2 = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT, "int" : NUMBER}
 	if name in types.keys():
 		return types[name], types_2[name]
