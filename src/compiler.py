@@ -124,7 +124,7 @@ def compile(data, char="\n", names = {}):
 					next_node_5 = data[i+5]
 
 				c1 = next_node_2 and next_node_2.type == NAME and next_node_2.value == ":"
-				c2 = next_node_3 and next_node_3.type == NAME and get_type(next_node_3.value)[1]
+				c2 = next_node_3 and next_node_3.type == NAME and get_type(next_node_3.value) and get_type(next_node_3.value)[1]
 				c3 = next_node_4 and next_node_4.type == NAME and next_node_4.value == "="
 
 
@@ -291,12 +291,15 @@ def compile_array(data, names = {}, char = ", "):
 			next_node = data[i+1]
 
 		if my_node.type == NAME:
-			if next_node and next_node.type == ARRAY:
-				out, names, out_t = compile_call_function(my_node, next_node, None, names, end = "")
-				output.append(out)
-				i += 1
+			if my_node.value in names:
+				if next_node and next_node.type == ARRAY:
+					out, names, out_t = compile_call_function(my_node, next_node, None, names, end = "")
+					output.append(out)
+					i += 1
+				else:
+					output.append(my_node.value)
 			else:
-				output.append(my_node.value)
+				throw_error("undefined name", my_node.line, "\"" + my_node.value + "\"")
 		elif my_node.type == NUMBER:
 			output.append(my_node.value)
 		elif my_node.type == BOOL:

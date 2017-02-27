@@ -9,8 +9,6 @@ ARRAY = 5
 FUNCTION = 6
 CALCULATION = 7
 
-line = 1
-
 class node:
 	def __init__(self, t, value, line = -1):
 		self.type = t
@@ -30,12 +28,7 @@ class node:
 		else:
 			return str(self.type) + ":" + str(self.value)
 
-def parse(string, count = False):
-	global line
-
-	if count:
-		line = 1
-
+def parse(string, line = 1):
 	data = []
 	is_str = False
 	my_str = ""
@@ -47,6 +40,7 @@ def parse(string, count = False):
 
 	z = 0
 	block_type = 0
+	block_start = 0
 
 	for i, token in enumerate(string):
 		if z == 0:
@@ -133,6 +127,7 @@ def parse(string, count = False):
 
 					my_name = ""
 					block_type = 0
+					block_start = line
 					z += 1
 				elif token == "{":
 					if my_name != "":
@@ -140,6 +135,7 @@ def parse(string, count = False):
 
 					my_name = ""
 					block_type = 1
+					block_start = line
 					z += 1
 				elif token == "[":
 					if my_name != "":
@@ -147,6 +143,7 @@ def parse(string, count = False):
 
 					my_name = ""
 					block_type = 2
+					block_start = line
 					z += 1
 				elif token in " \n\t":
 					if my_name != "":
@@ -163,7 +160,7 @@ def parse(string, count = False):
 				if token in ")}]":
 					z -= 1
 					if z == 0:
-						data.append(node(ARRAY, parse(my_name, False), line))
+						data.append(node(ARRAY, parse(my_name, block_start), line))
 						my_name = ""
 					else:
 						my_name += token
@@ -175,12 +172,12 @@ def parse(string, count = False):
 
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
-						data.append(node(ARRAY, parse(my_name, False), line))
+						data.append(node(ARRAY, parse(my_name, block_start), line))
 			elif block_type == 1:
 				if token in ")}]":
 					z -= 1
 					if z == 0:
-						data.append(node(FUNCTION, parse(my_name, False), line))
+						data.append(node(FUNCTION, parse(my_name, block_start), line))
 						my_name = ""
 					else:
 						my_name += token
@@ -192,12 +189,12 @@ def parse(string, count = False):
 
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
-						data.append(node(FUNCTION, parse(my_name, False), line))
+						data.append(node(FUNCTION, parse(my_name, block_start), line))
 			elif block_type == 2:
 				if token in "])}":
 					z -= 1
 					if z == 0:
-						data.append(node(CALCULATION, parse(my_name, False), line))
+						data.append(node(CALCULATION, parse(my_name, block_start), line))
 						my_name = ""
 					else:
 						my_name += token
@@ -209,9 +206,10 @@ def parse(string, count = False):
 
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
-						data.append(node(CALCULATION, parse(my_name, False), line))
+						data.append(node(CALCULATION, parse(my_name, block_start), line))
 
-		if token == "\n" and count:
+		if token == "\n":
+			print(line)
 			line += 1
 
 	return data

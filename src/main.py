@@ -4,7 +4,7 @@ from compiler import *
 
 if __name__ == "__main__":
 	string = utils.load_file("code.txt")
-	data = parse(string, True)
+	data = parse(string)
 
 	s = []
 	for my_node in data:
