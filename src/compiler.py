@@ -58,6 +58,11 @@ def compile(data, char="\n", names = {}):
 								if names[next_node_2.value].type == names[my_node.value].type:
 									output.append(my_node.value + " = " + str(next_node_2.value) + ";")
 									i += 2
+								elif next_node_3 and next_node_3.type == ARRAY and names[next_node_2.value].type == FUNCTION:
+									print(next_node_2.value)
+									out, names, out_t = compile_call_function(next_node_2, next_node_3, None, names)
+									output.append(my_node.value + " = " + out)
+									i += 3
 								else:
 									throw_error("type", my_node.line)
 							else:
@@ -92,8 +97,10 @@ def compile(data, char="\n", names = {}):
 									if i+3 < len(data):
 										next_node_3 = data[i+3]
 										if next_node_3.type == ARRAY:
-											out, names, out_t = compile_call_function(next_node, next_node_2, next_node_3, names)
+											out, names, out_t = compile_call_function(next_node_2, next_node_3, None, names, end = "")
 											output.append(compile_var(out_t, my_node.value, out, True, True))
+											names[my_node.value] = var(out_t, my_node.value)
+											i += 3
 							else:
 								throw_error("undefined name", next_node_2.line, "\"" + next_node_2.value + "\"")
 
@@ -225,6 +232,8 @@ def compile_call_function(my_node, next_node, next_node_2, names, end = ";"):
 
 				n = copy.deepcopy(names)
 				params = compile_array(next_node.value, names = n)
+				output_type = names[my_node.value].output
+				print(my_node.value, "", output_type)
 
 				if func:
 					out = my_node.value + "(" + params + ") " + func

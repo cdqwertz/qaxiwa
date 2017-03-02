@@ -1,0 +1,30 @@
+@cpp "#include <fstream>"
+
+io = !{
+	load_file(path : str) : str = {
+		content = ""
+
+		line = ""
+		@cpp "std::ifstream my_file;"
+		@cpp "my_file.open(path.c_str());"
+		@cpp "if(my_file.is_open()) {"
+		@cpp "while(std::getline(my_file, line)) {"
+
+		content = [content + line + "\n"]
+
+		@cpp "}"
+		@cpp "my_file.close();"
+		@cpp "}"
+
+		return (content)
+	}
+
+	save_file(path : str content : str) = {
+		@cpp "std::ofstream my_file;"
+		@cpp "my_file.open(path.c_str());"
+		@cpp "if(my_file.is_open()) {"
+		@cpp "my_file << content;"
+		@cpp "my_file.close();"
+		@cpp "}"
+	}
+}
