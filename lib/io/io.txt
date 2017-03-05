@@ -27,4 +27,11 @@ io = !{
 		@cpp "my_file.close();"
 		@cpp "}"
 	}
+
+	input(text : str) : str = {
+		write(text)
+		s = ""
+		@cpp "std::getline(std::cin, s);"
+		return (s)
+	}
 }
