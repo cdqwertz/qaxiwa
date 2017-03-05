@@ -8,6 +8,7 @@ FLOAT = 4
 ARRAY = 5
 FUNCTION = 6
 CALCULATION = 7
+NAMESPACE = 8
 
 class node:
 	def __init__(self, t, value, line = -1):
@@ -30,8 +31,11 @@ class node:
 
 def parse(string, line = 1):
 	data = []
+
 	is_str = False
 	my_str = ""
+
+	is_name = False
 	my_name = ""
 
 	is_number = False
@@ -41,6 +45,7 @@ def parse(string, line = 1):
 	z = 0
 	block_type = 0
 	block_start = 0
+	block_mode = 0
 
 	for i, token in enumerate(string):
 		if z == 0:
@@ -85,7 +90,7 @@ def parse(string, line = 1):
 				if token == "\"":
 					is_str = True
 					my_str = ""
-				elif token in ["-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]:
+				elif my_name == "" and token in ["-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]:
 					my_number = ""
 					number_mode = 0
 					my_number += token
@@ -100,25 +105,27 @@ def parse(string, line = 1):
 							is_number = True
 						else:
 							if my_number == "-":
-								my_number = "-1"
-
+								data.append(node(NAME, my_number, line))
+								my_number = ""
+							else:
+								if number_mode == 0:
+									data.append(node(NUMBER, my_number, line))
+								elif number_mode == 1:
+									if my_number.endswith("."):
+										my_number += "0"
+									data.append(node(FLOAT, my_number, line))
+							number_mode = 0
+					else:
+						if my_number == "-":
+							data.append(node(NAME, my_number, line))
+							my_number = ""
+						else:
 							if number_mode == 0:
 								data.append(node(NUMBER, my_number, line))
 							elif number_mode == 1:
 								if my_number.endswith("."):
 									my_number += "0"
 								data.append(node(FLOAT, my_number, line))
-							number_mode = 0
-					else:
-						if my_number == "-":
-							my_number = "-1"
-
-						if number_mode == 0:
-							data.append(node(NUMBER, my_number, line))
-						elif number_mode == 1:
-							if my_number.endswith("."):
-								my_number += "0"
-							data.append(node(FLOAT, my_number, line))
 						number_mode = 0
 
 				elif token == "(":
@@ -149,6 +156,16 @@ def parse(string, line = 1):
 					if my_name != "":
 						data.append(node(NAME, my_name, line))
 					my_name = ""
+				elif token in ":":
+					if my_name != "":
+						data.append(node(NAME, my_name, line))
+					my_name = ""
+					data.append(node(NAME, token, line))
+				elif token == "!":
+					if my_name != "":
+						data.append(node(NAME, my_name, line))
+					my_name = ""
+					block_mode = 1
 				else:
 					my_name += token
 
@@ -177,7 +194,11 @@ def parse(string, line = 1):
 				if token in ")}]":
 					z -= 1
 					if z == 0:
-						data.append(node(FUNCTION, parse(my_name, block_start), line))
+						if block_mode == 1:
+							data.append(node(NAMESPACE, parse(my_name, block_start), line))
+							block_mode = 0
+						else:
+							data.append(node(FUNCTION, parse(my_name, block_start), line))
 						my_name = ""
 					else:
 						my_name += token
@@ -189,7 +210,11 @@ def parse(string, line = 1):
 
 				if i == len(string)-1 and z != 0:
 					if my_name != "":
-						data.append(node(FUNCTION, parse(my_name, block_start), line))
+						if block_mode == 1:
+							data.append(node(NAMESPACE, parse(my_name, block_start), line))
+							block_mode = 0
+						else:
+							data.append(node(FUNCTION, parse(my_name, block_start), line))
 			elif block_type == 2:
 				if token in "])}":
 					z -= 1

@@ -16,7 +16,7 @@ class var:
 		self.params = params
 		self.output = output
 
-def compile(data, char="\n", names = {}):
+def compile(data, char="\n", names = {}, namespace = ""):
 	output = []
 
 	i = 0
@@ -56,7 +56,7 @@ def compile(data, char="\n", names = {}):
 						if t == NAME:
 							if next_node_2.value in names:
 								if names[next_node_2.value].type == names[my_node.value].type:
-									output.append(my_node.value + " = " + str(next_node_2.value) + ";")
+									output.append(my_node.value + " = " + str(next_node_2.value.replace("->", "::")) + ";")
 									i += 2
 								elif next_node_3 and next_node_3.type == ARRAY and names[next_node_2.value].type == FUNCTION:
 									print(next_node_2.value)
@@ -90,7 +90,7 @@ def compile(data, char="\n", names = {}):
 
 								if t == NUMBER or t == BOOL or t == FLOAT or t == STR:
 									output.append(compile_var(t, my_node.value, str(next_node_2.value), True, True))
-									names[my_node.value] = var(t, my_node.value)
+									names[namespace + my_node.value] = var(t, namespace + my_node.value)
 									i += 2
 								elif t == FUNCTION:
 									next_node_3 = None
@@ -99,7 +99,7 @@ def compile(data, char="\n", names = {}):
 										if next_node_3.type == ARRAY:
 											out, names, out_t = compile_call_function(next_node_2, next_node_3, None, names, end = "")
 											output.append(compile_var(out_t, my_node.value, out, True, True))
-											names[my_node.value] = var(out_t, my_node.value)
+											names[namespace + my_node.value] = var(out_t, namespace + my_node.value)
 											i += 3
 							else:
 								throw_error("undefined name", next_node_2.line, "\"" + next_node_2.value + "\"")
@@ -108,19 +108,24 @@ def compile(data, char="\n", names = {}):
 							if t == FUNCTION:
 								if my_node.value == "main":
 									output.append("int main() {\n" + compile(next_node_2.value, names = copy.deepcopy(names)) + "\nreturn 0;\n}")
-									names[my_node.value] = var(FUNCTION, my_node.value)
+									names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 								else:
 									output.append("void " + my_node.value + "() {\n" + compile(next_node_2.value, names = copy.deepcopy(names)) + "\n}")
-									names[my_node.value] = var(FUNCTION, my_node.value)
+									names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 								i += 2
 							elif t == NUMBER or t == FLOAT or t == BOOL or t == STR:
 								output.append(compile_var(t, my_node.value, str(next_node_2.value), True))
-								names[my_node.value] = var(t, my_node.value)
+								names[namespace + my_node.value] = var(t, namespace + my_node.value)
 								i += 2
 							elif t == CALCULATION:
 								out, out_t = compile_calculation(next_node_2.value, copy.deepcopy(names))
-								names[my_node.value] = var(out_t, my_node.value)
+								names[namespace + my_node.value] = var(out_t, namespace + my_node.value)
 								output.append(compile_var(out_t, my_node.value, out, True, True))
+							elif t == NAMESPACE:
+								print(namespace + my_node.value + "->")
+								output.append("namespace " + my_node.value + " {\n" + compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->") + "\n}")
+								names[namespace + my_node.value] = var(NAMESPACE, namespace + my_node.value)
+								i += 2
 			elif next_node and next_node.type == ARRAY:
 				next_node_4 = None
 				if i+4 < len(data):
@@ -143,7 +148,7 @@ def compile(data, char="\n", names = {}):
 						n[params[j].name] = params[j]
 
 					output.append(get_type(next_node_3.value)[0] + " " + my_node.value + "(" + out + ") {\n" + compile(next_node_5.value, names = n) + "\n}")
-					names[my_node.value] = var(FUNCTION, my_node.value, params, get_type(next_node_3.value)[1])
+					names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params, get_type(next_node_3.value)[1])
 					i += 3
 
 				elif next_node_2 and next_node_2.type == NAME and next_node_2.value == "=" and next_node_3 and next_node_3.type == FUNCTION:
@@ -154,7 +159,7 @@ def compile(data, char="\n", names = {}):
 						n[params[j].name] = params[j]
 
 					output.append("void " + my_node.value + "(" + out + ") {\n" + compile(next_node_3.value, names = n) + "\n}")
-					names[my_node.value] = var(FUNCTION, my_node.value, params)
+					names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params)
 					i += 3
 				else:
 					out, names, out_t = compile_call_function(my_node, next_node, next_node_2, names)
@@ -236,9 +241,9 @@ def compile_call_function(my_node, next_node, next_node_2, names, end = ";"):
 				print(my_node.value, "", output_type)
 
 				if func:
-					out = my_node.value + "(" + params + ") " + func
+					out = my_node.value.replace("->", "::") + "(" + params + ") " + func
 				else:
-					out = my_node.value + "(" + params + ")" + end
+					out = my_node.value.replace("->", "::") + "(" + params + ")" + end
 
 			elif names[my_node.value].type == STR:
 				out = my_node.value + ".c_str()[" + compile_array(next_node.value, names = copy.deepcopy(names), char= "][") + "]" + end
@@ -273,11 +278,11 @@ def compile_calculation(data, names = {}, char = " "):
 				print("NAME ", my_node.value, " TYPE ", names[my_node.value].type)
 				if names[my_node.value].type == FLOAT:
 					output_type = FLOAT
-					output.append(my_node.value)
+					output.append(my_node.value.replace("->", "::"))
 				if names[my_node.value].type == NUMBER:
-					output.append(my_node.value)
+					output.append(my_node.value.replace("->", "::"))
 				if names[my_node.value].type == STR:
-					output.append(my_node.value)
+					output.append(my_node.value.replace("->", "::"))
 
 					if output_type == NUMBER or output_type == FLOAT:
 						output_type = STR
@@ -322,7 +327,7 @@ def compile_array(data, names = {}, char = ", "):
 					output.append(out)
 					i += 1
 				else:
-					output.append(my_node.value)
+					output.append(my_node.value.replace("->", "::"))
 			else:
 				throw_error("undefined name", my_node.line, "\"" + my_node.value + "\"")
 		elif my_node.type == NUMBER:
