@@ -218,6 +218,8 @@ def compile_call_function(my_node, next_node, next_node_2, names, end = ";"):
 			node_from = next_node.value[1]
 			node_to = next_node.value[2]
 
+			#TODO
+
 			if node_var.type == NAME and node_from.type == NUMBER and node_to.type == NUMBER:
 				if next_node_2 and next_node_2.type == FUNCTION:
 					n = copy.deepcopy(names)
