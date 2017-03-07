@@ -13,10 +13,8 @@ if __name__ == "__main__":
 	print("[" + ", ".join(s) + "]")
 	print()
 
-	names = {"while" : var(FUNCTION, "while"), "if" : var(FUNCTION, "if"), "return" : var(FUNCTION, "return")}
-
-	out = compile(data, names = names)
-	out = "#include <iostream>\n#include <string>\n\n" + out
+	my_compiler = compiler()
+	out = my_compiler.get_code(data)
 	print(out)
 
 	utils.save_file("output.cpp", out)
