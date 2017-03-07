@@ -1,6 +1,7 @@
 import utils
 from parser import *
 from compiler import *
+from language import *
 
 if __name__ == "__main__":
 	string = utils.load_file("code.txt")
@@ -13,7 +14,8 @@ if __name__ == "__main__":
 	print("[" + ", ".join(s) + "]")
 	print()
 
-	my_compiler = compiler()
+	my_language = language("languages/cpp.txt")
+	my_compiler = compiler(my_language)
 	out = my_compiler.get_code(data)
 	print(out)
 

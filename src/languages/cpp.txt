@@ -1,0 +1,92 @@
+name:
+	cpp
+
+file_ending:
+	.cpp
+
+end:
+	;
+array:
+	,
+
+define-var:
+	...type... ...name... = ...value...
+
+blocks:
+	function:
+		{...}
+	parameter:
+		(...)
+	calculation:
+		...
+	namespace:
+		namespace ...name... {...}
+
+parameter:
+	...type... ...
+
+types:
+	number:
+		name:
+			int
+	float:
+		name:
+			float
+		pattern:
+			...f
+	str:
+		name:
+			std::string
+		pattern:
+			"..."
+	bool:
+		name:
+			bool
+	void:
+		name:
+			void
+
+functions:
+	built-in:
+		read:
+			name:
+				std::cin >>
+			split:
+				>>
+			custom-params:
+				true
+		print:
+			name:
+				std::cout <<
+			end:
+				<< std::endl;
+			split:
+				<<
+			custom-params:
+				true
+		write:
+			name:
+				std::cout <<
+			split:
+				>>
+			custom-params:
+				true
+		if:
+			name:
+				if
+		while:
+			name:
+				while
+		return:
+			name:
+				return
+		for:
+			custom:
+				true
+			name:
+				for(int ... = ...from...; ... < ...to...; ...++)
+	define:
+		main:
+			int main() {\n...\n}
+		other:
+			...return... ...name... ...params... ...body...

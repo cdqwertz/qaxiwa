@@ -9,6 +9,9 @@ class var:
 		self.output = output
 
 class compiler:
+	def __init__(self, language):
+		self.language = language
+
 	def get_code(self, data):
 		out = "#include <iostream>\n#include <string>\n\n"
 
