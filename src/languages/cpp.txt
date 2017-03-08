@@ -6,24 +6,37 @@ file_ending:
 
 end:
 	;
+
 array:
-	,
+	,\s
+
+scope:
+	\:\:
+
+file-start:
+	#include <iostream>\n#include <string>\n\n
+
+file-end:
+	\e
 
 define-var:
 	...type... ...name... = ...value...
 
+set-var:
+	...name... = ...value...
+
 blocks:
 	function:
-		{...}
+		{\n...value...\n}
 	parameter:
-		(...)
+		(...value...)
 	calculation:
-		...
+		(...value...)
 	namespace:
-		namespace ...name... {...}
+		namespace ...name... {\n...value...\n}
 
 parameter:
-	...type... ...
+	...type... ...value...
 
 types:
 	number:
@@ -85,8 +98,17 @@ functions:
 				true
 			name:
 				for(int ... = ...from...; ... < ...to...; ...++)
+	call:
+		call:
+			...name...(...params...)
+		call-func:
+			...name...(...params...) {\n...func...\n}
 	define:
 		main:
-			int main() {\n...\n}
+			int main() {\n...value...\nreturn 0;\n}
+		no-params:
+			void ...name...() {\n...value...\n}
+		no-return-value:
+			void ...name...(...params...) {\n...value...\n}
 		other:
-			...return... ...name... ...params... ...body...
+			...return... ...name...(...params...) {\n...value...\n}
