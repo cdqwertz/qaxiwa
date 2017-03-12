@@ -4,7 +4,7 @@ main = {
 	a = 2
 	b = 1
 	c = [a + b]
-	print(c)
+	io->print(c)
 }
 ```
 
@@ -12,9 +12,9 @@ main = {
 main = {
 	a = 0
 	b = 1
-	read(a)
+	a = io->read()
 	if ([a == b]) {
-		print("a == b")
+		io->print("a == b")
 	}
 }
 ```

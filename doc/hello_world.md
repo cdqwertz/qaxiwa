@@ -5,11 +5,11 @@ main = {
 }
 ```
 ###Print
-If you want to output text in qaxiwa, you can use ```print("Text")```. Let's use ```print``` to output the text "Hello World".
+If you want to output text in qaxiwa, you can use ```io->print("Text")```. Let's use ```io->print``` to output the text "Hello World".
 
 ```c++
 main = {
-	print("Hello World")
+	io->print("Hello World")
 }
 ```
 

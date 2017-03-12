@@ -1,52 +1,56 @@
 name:
-	cpp
+	lua
 
 file_ending:
-	.cpp
+	.lua
 
 end:
-	;
+	\e
+
+end-namespace:
+	,
 
 array:
 	,\s
 
 scope:
-	\:\:
+	.
 
 file-start:
-	#include <iostream>\n#include <string>\n\n
-
-file-end:
 	\e
 
+file-end:
+	\n\nmain()
+
 define-var:
-	...type... ...name... = ...value...
+	local ...name... = ...value...
 
 set-var:
 	...name... = ...value...
 
+define-var-namespace:
+	...name... = ...value...
+
 blocks:
 	function:
-		{\n...value...\n}
+		\n...value...\nend
 	parameter:
 		(...value...)
 	calculation:
 		(...value...)
 	namespace:
-		namespace ...name... {\n...value...\n}
+		...name... = {\n...value...\n}
 
 parameter:
-	...type... ...value...
+	...value...
 
 types:
 	number:
 		name:
-			int
+			number
 	float:
 		name:
-			float
-		pattern:
-			...f
+			number
 	str:
 		name:
 			std::string
@@ -82,10 +86,10 @@ functions:
 			...name...(...params...) {\n...func...\n}
 	define:
 		main:
-			int main() {\n...value...\nreturn 0;\n}
+			function main() \n...value...\nend
 		no-params:
-			void ...name...() {\n...value...\n}
+			...name... = function() \n...value...\nend
 		no-return-value:
-			void ...name...(...params...) {\n...value...\n}
+			...name... = function(...params...) \n...value...\nend
 		other:
-			...return... ...name...(...params...) {\n...value...\n}
+			...name... = function(...params...) \n...value...\nend

@@ -9,17 +9,16 @@ See LICENSE.txt
 Hello World:
 ```c++
 main = {
-	print("Hello World")
+	io->print("Hello World")
 }
 ```
 
 Add 2 numbers:
 ```c++
 main = {
-	a = 0
-	b = 0
-	read(a b)
+	a = io->read()
+	b = io->read()
 	c = [a + b]
-	print(a " + " b " = " c)
+	io->print([" " + c])
 }
 ```

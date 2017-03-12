@@ -28,6 +28,27 @@ io = !{
 		@cpp "}"
 	}
 
+	write(text : str) = {
+		@cpp "std::cout << text;"
+	}
+
+	print(text : str) = {
+		@cpp "std::cout << text << std::endl;"
+		@lua "print(text)"
+	}
+
+	read() : number = {
+		n = 0
+		@cpp "std::cin >> n;"
+		return(n)
+	}
+
+	read_float() : float = {
+		n = .
+		@cpp "std::cin >> n;"
+		return(n)
+	}
+
 	input(text : str) : str = {
 		write(text)
 		s = ""

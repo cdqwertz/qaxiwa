@@ -34,7 +34,7 @@ class compiler:
 		else:
 			pass
 
-	def compile(self, data, char="\n", names = {}, namespace = ""):
+	def compile(self, data, char="\n", names = {}, namespace = "", is_namespace = False):
 		output = []
 
 		i = 0
@@ -77,7 +77,6 @@ class compiler:
 										output.append(self.language.set_var(t, my_node.value, name_2 = next_node_2.value))
 										i += 2
 									elif next_node_3 and next_node_3.type == ARRAY and names[next_node_2.value].type == FUNCTION:
-										print(next_node_2.value)
 										out, names, out_t = self.compile_call_function(next_node_2, next_node_3, None, names)
 										output.append(self.language.set_var(t, my_node.value, name_2 = out))
 										i += 3
@@ -105,7 +104,7 @@ class compiler:
 									t = names[next_node_2.value].type
 
 									if t == NUMBER or t == BOOL or t == FLOAT or t == STR:
-										output.append(self.compile_var(t, my_node.value, str(next_node_2.value), True, True))
+										output.append(self.compile_var(t, my_node.value, str(next_node_2.value), True, True, is_namespace = is_namespace))
 										names[namespace + my_node.value] = var(t, namespace + my_node.value)
 										i += 2
 									elif t == FUNCTION:
@@ -114,7 +113,7 @@ class compiler:
 											next_node_3 = data[i+3]
 											if next_node_3.type == ARRAY:
 												out, names, out_t = self.compile_call_function(next_node_2, next_node_3, None, names, end = "")
-												output.append(self.compile_var(out_t, my_node.value, out, True, True))
+												output.append(self.compile_var(out_t, my_node.value, out, True, True, is_namespace = is_namespace))
 												names[namespace + my_node.value] = var(out_t, namespace + my_node.value)
 												i += 3
 								else:
@@ -126,20 +125,23 @@ class compiler:
 										output.append(self.language.get_code("functions/define/main", {"value" : self.compile(next_node_2.value, names = copy.deepcopy(names))}))
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 									else:
-										output.append(self.language.get_code("functions/define/no-params", {"name" : my_node.value, "value" : self.compile(next_node_2.value, names = copy.deepcopy(names))}))
+										e = self.language.end
+										if is_namespace:
+											e = self.language.end_namespace
+
+										output.append(self.language.get_code("functions/define/no-params", {"name" : my_node.value, "value" : self.compile(next_node_2.value, names = copy.deepcopy(names)), "end" : e}))
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 									i += 2
 								elif t == NUMBER or t == FLOAT or t == BOOL or t == STR:
-									output.append(self.compile_var(t, my_node.value, str(next_node_2.value), True))
+									output.append(self.compile_var(t, my_node.value, str(next_node_2.value), True, is_namespace = is_namespace))
 									names[namespace + my_node.value] = var(t, namespace + my_node.value)
 									i += 2
 								elif t == CALCULATION:
 									out, out_t = self.compile_calculation(next_node_2.value, copy.deepcopy(names))
 									names[namespace + my_node.value] = var(out_t, namespace + my_node.value)
-									output.append(self.compile_var(out_t, my_node.value, out, True, True))
+									output.append(self.compile_var(out_t, my_node.value, out, True, True, is_namespace = is_namespace))
 								elif t == NAMESPACE:
-									print(namespace + my_node.value + "->")
-									output.append(self.language.get_code("blocks/namespace", {"name" : my_node.value, "value" : self.compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->")}))
+									output.append(self.language.get_code("blocks/namespace", {"name" : my_node.value, "value" : self.compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->", is_namespace = True)}))
 									names[namespace + my_node.value] = var(NAMESPACE, namespace + my_node.value)
 									i += 2
 				elif next_node and next_node.type == ARRAY:
@@ -163,7 +165,10 @@ class compiler:
 						for j in params.keys():
 							n[params[j].name] = params[j]
 
-						output.append(self.language.get_code("functions/define/other", {"return" : self.get_type(next_node_3.value)[0],"name" : my_node.value, "params" : out, "value" : self.compile(next_node_5.value, names = n)}))
+						e = self.language.end
+						if is_namespace:
+							e = self.language.end_namespace
+						output.append(self.language.get_code("functions/define/other", {"return" : self.get_type(next_node_3.value)[0],"name" : my_node.value, "params" : out, "value" : self.compile(next_node_5.value, names = n), "end" : e}))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params, self.get_type(next_node_3.value)[1])
 						i += 3
 
@@ -174,7 +179,11 @@ class compiler:
 						for j in params.keys():
 							n[params[j].name] = params[j]
 
-						output.append(self.language.get_code("functions/define/no-return-value", {"name" : my_node.value, "params" : out, "value" : self.compile(next_node_3.value, names = n)}))
+						e = self.language.end
+						if is_namespace:
+							e = self.language.end_namespace
+
+						output.append(self.language.get_code("functions/define/no-return-value", {"name" : my_node.value, "params" : out, "value" : self.compile(next_node_3.value, names = n), "end" : e}))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params)
 						i += 3
 					else:
@@ -185,14 +194,14 @@ class compiler:
 
 		return char.join(output)
 
-	def compile_var(self, t, name, value, new = False, is_name = False):
+	def compile_var(self, t, name, value, new = False, is_name = False, is_namespace = False):
 		out = ""
 
 		if new:
 			if is_name:
-				return self.language.define_var(t, name, name_2 = value)
+				return self.language.define_var(t, name, name_2 = value, is_namespace = is_namespace)
 			else:
-				return self.language.define_var(t, name, value)
+				return self.language.define_var(t, name, value, is_namespace = is_namespace)
 		else:
 			if is_name:
 				return self.language.set_var(t, name, name_2 = value)
@@ -208,13 +217,7 @@ class compiler:
 
 		out = ""
 		output_type = -1
-		if my_node.value == "print":
-			out = "std::cout << " + self.compile_array(next_node.value, names = copy.deepcopy(names), char= " << ") + " << std::endl" + end
-		elif my_node.value == "write":
-			out = "std::cout << " + self.compile_array(next_node.value, names = copy.deepcopy(names), char= " << ") + end
-		elif my_node.value == "read":
-			out = "std::cin >> " + self.compile_array(next_node.value, names = copy.deepcopy(names), char= " >> ") + end
-		elif my_node.value == "for":
+		if my_node.value == "for":
 			if len(next_node.value) > 2:
 				node_var = next_node.value[0]
 				node_from = next_node.value[1]

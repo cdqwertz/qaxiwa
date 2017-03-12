@@ -5,4 +5,5 @@
 __pycache__/
 src/code.txt
 src/output.cpp
+src/output.lua
 src/__pycache__/

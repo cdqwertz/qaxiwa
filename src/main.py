@@ -14,9 +14,11 @@ if __name__ == "__main__":
 	print("[" + ", ".join(s) + "]")
 	print()
 
-	my_language = language("languages/cpp.txt")
+	lang = input("language: ")
+
+	my_language = language("languages/" + lang + ".txt")
 	my_compiler = compiler(my_language)
 	out = my_compiler.get_code(data)
 	print(out)
 
-	utils.save_file("output.cpp", out)
+	utils.save_file("output" + my_language.data["file_ending"], out)
