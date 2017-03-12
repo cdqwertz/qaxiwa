@@ -37,6 +37,9 @@ class compiler:
 	def compile(self, data, char="\n", names = {}, namespace = "", is_namespace = False):
 		output = []
 
+		if is_namespace and char == "\n":
+			char = self.language.end_namespace
+
 		i = 0
 		while i < len(data):
 			my_node = data[i]
@@ -125,9 +128,6 @@ class compiler:
 										output.append(self.language.get_code("functions/define/main", {"value" : self.compile(next_node_2.value, names = copy.deepcopy(names))}))
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 									else:
-										e = self.language.end
-										if is_namespace:
-											e = self.language.end_namespace
 
 										output.append(self.language.get_code("functions/define/no-params", {"name" : my_node.value, "value" : self.compile(next_node_2.value, names = copy.deepcopy(names)), "end" : e}))
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
@@ -165,9 +165,6 @@ class compiler:
 						for j in params.keys():
 							n[params[j].name] = params[j]
 
-						e = self.language.end
-						if is_namespace:
-							e = self.language.end_namespace
 						output.append(self.language.get_code("functions/define/other", {"return" : self.get_type(next_node_3.value)[0],"name" : my_node.value, "params" : out, "value" : self.compile(next_node_5.value, names = n), "end" : e}))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params, self.get_type(next_node_3.value)[1])
 						i += 3
@@ -178,10 +175,6 @@ class compiler:
 						n = copy.deepcopy(names)
 						for j in params.keys():
 							n[params[j].name] = params[j]
-
-						e = self.language.end
-						if is_namespace:
-							e = self.language.end_namespace
 
 						output.append(self.language.get_code("functions/define/no-return-value", {"name" : my_node.value, "params" : out, "value" : self.compile(next_node_3.value, names = n), "end" : e}))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params)

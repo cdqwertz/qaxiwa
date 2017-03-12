@@ -10,8 +10,8 @@ class language:
 
 		self.end = self.data["end"]
 		self.array = self.data["array"]
-		self.end_namespace = self.end
 
+		self.end_namespace = "\n"
 		if "end-namespace" in self.data:
 			self.end_namespace = self.data["end-namespace"]
 
@@ -80,8 +80,6 @@ class language:
 
 	def set_var(self, t, name, value = None, name_2 = None, is_namespace = False):
 		e = self.end
-		if is_namespace:
-			e = self.end_namespace
 
 		if value != None:
 			return self.get_code("set-var", {"name" : name, "value" : self.get_value(t, value)}) + self.end
@@ -91,9 +89,9 @@ class language:
 	def define_var(self, t, name, value = None, name_2 = None, is_namespace = False):
 		if is_namespace and "define-var-namespace" in self.data:
 			if value != None:
-				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : name, "value" : self.get_value(t, value)}) + self.end_namespace
+				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : name, "value" : self.get_value(t, value)}) + self.end
 			else:
-				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : name, "value" : self.get_name(name_2)}) + self.end_namespace
+				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : name, "value" : self.get_name(name_2)}) + self.end
 		else:
 			if value != None:
 				return self.get_code("define-var", {"type" : self.get_type(t), "name" : name, "value" : self.get_value(t, value)}) + self.end
