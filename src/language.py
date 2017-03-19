@@ -76,27 +76,31 @@ class language:
 			return value
 
 	def get_name(self, name):
-		return name.replace("->", self.data["scope"])
+		if name.split("->")[0] in self.data["keywords"].split("|"):
+			name = "var_" + name
+
+		name = name.replace("->", self.data["scope"])
+		return name
 
 	def set_var(self, t, name, value = None, name_2 = None, is_namespace = False):
 		e = self.end
 
 		if value != None:
-			return self.get_code("set-var", {"name" : name, "value" : self.get_value(t, value)}) + self.end
+			return self.get_code("set-var", {"name" : self.get_name(name), "value" : self.get_value(t, value)}) + self.end
 		else:
-			return self.get_code("set-var", {"name" : name, "value" : self.get_name(name_2)}) + self.end
+			return self.get_code("set-var", {"name" : self.get_name(name), "value" : self.get_name(name_2)}) + self.end
 
 	def define_var(self, t, name, value = None, name_2 = None, is_namespace = False):
 		if is_namespace and "define-var-namespace" in self.data:
 			if value != None:
-				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : name, "value" : self.get_value(t, value)}) + self.end
+				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_value(t, value)}) + self.end
 			else:
-				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : name, "value" : self.get_name(name_2)}) + self.end
+				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_name(name_2)}) + self.end
 		else:
 			if value != None:
-				return self.get_code("define-var", {"type" : self.get_type(t), "name" : name, "value" : self.get_value(t, value)}) + self.end
+				return self.get_code("define-var", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_value(t, value)}) + self.end
 			else:
-				return self.get_code("define-var", {"type" : self.get_type(t), "name" : name, "value" : self.get_name(name_2)}) + self.end
+				return self.get_code("define-var", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_name(name_2)}) + self.end
 
 if __name__ == "__main__":
 	my_language = language("languages/cpp.txt")

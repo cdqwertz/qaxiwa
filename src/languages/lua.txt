@@ -7,6 +7,9 @@ file_ending:
 end:
 	\e
 
+keywords:
+	for|if|while|end|do|local|dofile|print|io|os
+
 end-namespace:
 	,\n
 

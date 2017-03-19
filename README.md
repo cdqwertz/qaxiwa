@@ -1,11 +1,11 @@
-#Qaxiwa
+# Qaxiwa
 This is a small programming language I make for fun.
 *WIP*
 
-###License
+### License
 See LICENSE.txt
 
-###Examples
+### Examples
 Hello World:
 ```c++
 main = {

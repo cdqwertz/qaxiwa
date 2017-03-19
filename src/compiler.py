@@ -1,4 +1,4 @@
-import utils, copy
+import utils, copy, sys
 from parser import *
 
 class var:
@@ -129,7 +129,7 @@ class compiler:
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 									else:
 
-										output.append(self.language.get_code("functions/define/no-params", {"name" : my_node.value, "value" : self.compile(next_node_2.value, names = copy.deepcopy(names)), "end" : e}))
+										output.append(self.language.get_code("functions/define/no-params", {"name" : self.language.get_name(my_node.value), "value" : self.compile(next_node_2.value, names = copy.deepcopy(names)), "end" : e}))
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 									i += 2
 								elif t == NUMBER or t == FLOAT or t == BOOL or t == STR:
@@ -141,7 +141,7 @@ class compiler:
 									names[namespace + my_node.value] = var(out_t, namespace + my_node.value)
 									output.append(self.compile_var(out_t, my_node.value, out, True, True, is_namespace = is_namespace))
 								elif t == NAMESPACE:
-									output.append(self.language.get_code("blocks/namespace", {"name" : my_node.value, "value" : self.compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->", is_namespace = True)}))
+									output.append(self.language.get_code("blocks/namespace", {"name" : self.language.get_name(my_node.value), "value" : self.compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->", is_namespace = True)}))
 									names[namespace + my_node.value] = var(NAMESPACE, namespace + my_node.value)
 									i += 2
 				elif next_node and next_node.type == ARRAY:
@@ -165,7 +165,7 @@ class compiler:
 						for j in params.keys():
 							n[params[j].name] = params[j]
 
-						output.append(self.language.get_code("functions/define/other", {"return" : self.get_type(next_node_3.value)[0],"name" : my_node.value, "params" : out, "value" : self.compile(next_node_5.value, names = n), "end" : e}))
+						output.append(self.language.get_code("functions/define/other", {"return" : self.get_type(next_node_3.value)[0],"name" : self.language.get_name(my_node.value), "params" : out, "value" : self.compile(next_node_5.value, names = n), "end" : e}))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params, self.get_type(next_node_3.value)[1])
 						i += 3
 
@@ -176,7 +176,7 @@ class compiler:
 						for j in params.keys():
 							n[params[j].name] = params[j]
 
-						output.append(self.language.get_code("functions/define/no-return-value", {"name" : my_node.value, "params" : out, "value" : self.compile(next_node_3.value, names = n), "end" : e}))
+						output.append(self.language.get_code("functions/define/no-return-value", {"name" : self.language.get_name(my_node.value), "params" : out, "value" : self.compile(next_node_3.value, names = n), "end" : e}))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params)
 						i += 3
 					else:

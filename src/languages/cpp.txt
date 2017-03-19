@@ -4,6 +4,9 @@ name:
 file_ending:
 	.cpp
 
+keywords:
+	for|int|float|short|long|byte|while|if|do|switch|case
+
 end:
 	;
 
