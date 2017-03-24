@@ -34,7 +34,17 @@ class compiler:
 		else:
 			pass
 
-	def compile(self, data, char="\n", names = {}, namespace = "", is_namespace = False):
+	def indent_text(self, text, indent = 0):
+		if indent > 0:
+			out = []
+			for line in text.split("\n"):
+				out.append("\t" + line)
+
+			return "\n".join(out)
+		else:
+			return text
+
+	def compile(self, data, char="\n", names = {}, namespace = "", is_namespace = False, indent = 0):
 		output = []
 
 		if is_namespace and char == "\n":
@@ -61,7 +71,7 @@ class compiler:
 				if my_node.value.startswith("@"):
 					if next_node and next_node.type == STR:
 						if my_node.value == "@" + self.language.get_code("name"):
-							output.append(next_node.value)
+							output.append(self.indent_text(next_node.value, indent))
 						elif my_node.value == "@load":
 							output.append("#include \"" + next_node.value + "\"")
 						elif my_node.value == "@import":
@@ -77,11 +87,11 @@ class compiler:
 							if t == NAME:
 								if next_node_2.value in names:
 									if names[next_node_2.value].type == names[my_node.value].type:
-										output.append(self.language.set_var(t, my_node.value, name_2 = next_node_2.value))
+										output.append(self.indent_text(self.language.set_var(t, my_node.value, name_2 = next_node_2.value), indent))
 										i += 2
 									elif next_node_3 and next_node_3.type == ARRAY and names[next_node_2.value].type == FUNCTION:
-										out, names, out_t = self.compile_call_function(next_node_2, next_node_3, None, names)
-										output.append(self.language.set_var(t, my_node.value, name_2 = out))
+										out, names, out_t = self.compile_call_function(next_node_2, next_node_3, None, names, namespace = namespace)
+										output.append(self.indent_text(self.language.set_var(t, my_node.value, name_2 = out), indent))
 										i += 3
 									else:
 										self.throw_error("type", my_node.line)
@@ -90,13 +100,13 @@ class compiler:
 							else:
 								if names[my_node.value].type == t:
 									if t == FLOAT or t == NUMBER or t == BOOL or t == STR:
-										output.append(self.language.set_var(t, my_node.value, value = next_node_2.value))
+										output.append(self.indent_text(self.language.set_var(t, my_node.value, value = next_node_2.value), indent))
 									elif t == FUNCTION:
 										self.throw_error("override function", my_node.line)
 									i += 2
 								elif t == CALCULATION:
-									out, out_t = self.compile_calculation(next_node_2.value, copy.deepcopy(names))
-									output.append(self.language.set_var(t, my_node.value, name_2 = out))
+									out, out_t = self.compile_calculation(next_node_2.value, copy.deepcopy(names), namespace = namespace)
+									output.append(self.indent_text(self.language.set_var(t, my_node.value, name_2 = out), indent))
 								else:
 									self.throw_error("type", my_node.line)
 
@@ -107,7 +117,7 @@ class compiler:
 									t = names[next_node_2.value].type
 
 									if t == NUMBER or t == BOOL or t == FLOAT or t == STR:
-										output.append(self.compile_var(t, my_node.value, str(next_node_2.value), True, True, is_namespace = is_namespace))
+										output.append(self.indent_text(self.compile_var(t, my_node.value, str(next_node_2.value), True, True, is_namespace = is_namespace), indent))
 										names[namespace + my_node.value] = var(t, namespace + my_node.value)
 										i += 2
 									elif t == FUNCTION:
@@ -115,8 +125,8 @@ class compiler:
 										if i+3 < len(data):
 											next_node_3 = data[i+3]
 											if next_node_3.type == ARRAY:
-												out, names, out_t = self.compile_call_function(next_node_2, next_node_3, None, names, end = "")
-												output.append(self.compile_var(out_t, my_node.value, out, True, True, is_namespace = is_namespace))
+												out, names, out_t = self.compile_call_function(next_node_2, next_node_3, None, names, end = "", namespace = namespace)
+												output.append(self.indent_text(self.compile_var(out_t, my_node.value, out, True, True, is_namespace = is_namespace), indent))
 												names[namespace + my_node.value] = var(out_t, namespace + my_node.value)
 												i += 3
 								else:
@@ -125,23 +135,23 @@ class compiler:
 							else:
 								if t == FUNCTION:
 									if my_node.value == "main":
-										output.append(self.language.get_code("functions/define/main", {"value" : self.compile(next_node_2.value, names = copy.deepcopy(names))}))
+										output.append(self.indent_text(self.language.get_code("functions/define/main", {"value" : self.compile(next_node_2.value, names = copy.deepcopy(names), indent = indent + 1)}), indent))
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 									else:
 
-										output.append(self.language.get_code("functions/define/no-params", {"name" : self.language.get_name(my_node.value), "value" : self.compile(next_node_2.value, names = copy.deepcopy(names)), "end" : e}))
+										output.append(self.indent_text(self.language.get_code("functions/define/no-params", {"name" : self.language.get_name(my_node.value), "value" : self.compile(next_node_2.value, names = copy.deepcopy(names), indent = indent + 1)}), indent))
 										names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value)
 									i += 2
 								elif t == NUMBER or t == FLOAT or t == BOOL or t == STR:
-									output.append(self.compile_var(t, my_node.value, str(next_node_2.value), True, is_namespace = is_namespace))
+									output.append(self.indent_text(self.compile_var(t, my_node.value, str(next_node_2.value), True, is_namespace = is_namespace), indent))
 									names[namespace + my_node.value] = var(t, namespace + my_node.value)
 									i += 2
 								elif t == CALCULATION:
-									out, out_t = self.compile_calculation(next_node_2.value, copy.deepcopy(names))
+									out, out_t = self.compile_calculation(next_node_2.value, copy.deepcopy(names), namespace = namespace)
 									names[namespace + my_node.value] = var(out_t, namespace + my_node.value)
-									output.append(self.compile_var(out_t, my_node.value, out, True, True, is_namespace = is_namespace))
+									output.append(self.indent_text(self.compile_var(out_t, my_node.value, out, True, True, namespace = namespace), indent))
 								elif t == NAMESPACE:
-									output.append(self.language.get_code("blocks/namespace", {"name" : self.language.get_name(my_node.value), "value" : self.compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->", is_namespace = True)}))
+									output.append(self.indent_text(self.language.get_code("blocks/namespace", {"name" : self.language.get_name(my_node.value), "value" : self.compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->", is_namespace = True, indent = indent + 1)}), indent))
 									names[namespace + my_node.value] = var(NAMESPACE, namespace + my_node.value)
 									i += 2
 				elif next_node and next_node.type == ARRAY:
@@ -165,7 +175,7 @@ class compiler:
 						for j in params.keys():
 							n[params[j].name] = params[j]
 
-						output.append(self.language.get_code("functions/define/other", {"return" : self.get_type(next_node_3.value)[0],"name" : self.language.get_name(my_node.value), "params" : out, "value" : self.compile(next_node_5.value, names = n), "end" : e}))
+						output.append(self.indent_text(self.language.get_code("functions/define/other", {"return" : self.get_type(next_node_3.value)[0],"name" : self.language.get_name(my_node.value), "params" : out, "value" : self.compile(next_node_5.value, names = n, indent = indent + 1)}), indent))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params, self.get_type(next_node_3.value)[1])
 						i += 3
 
@@ -176,34 +186,34 @@ class compiler:
 						for j in params.keys():
 							n[params[j].name] = params[j]
 
-						output.append(self.language.get_code("functions/define/no-return-value", {"name" : self.language.get_name(my_node.value), "params" : out, "value" : self.compile(next_node_3.value, names = n), "end" : e}))
+						output.append(self.indent_text(self.language.get_code("functions/define/no-return-value", {"name" : self.language.get_name(my_node.value), "params" : out, "value" : self.compile(next_node_3.value, names = n, indent = indent + 1)}), indent))
 						names[namespace + my_node.value] = var(FUNCTION, namespace + my_node.value, params)
 						i += 3
 					else:
-						out, names, out_t = self.compile_call_function(my_node, next_node, next_node_2, names)
-						output.append(out)
+						out, names, out_t = self.compile_call_function(my_node, next_node, next_node_2, names, indent = indent, namespace = namespace)
+						output.append(self.indent_text(out, indent))
 
 			i += 1
 
 		return char.join(output)
 
-	def compile_var(self, t, name, value, new = False, is_name = False, is_namespace = False):
+	def compile_var(self, t, name, value, new = False, is_name = False, is_namespace = False, namespace = ""):
 		out = ""
 
 		if new:
 			if is_name:
-				return self.language.define_var(t, name, name_2 = value, is_namespace = is_namespace)
+				return self.language.define_var(t, name, name_2 = value, is_namespace = is_namespace, namespace = namespace)
 			else:
-				return self.language.define_var(t, name, value, is_namespace = is_namespace)
+				return self.language.define_var(t, name, value, is_namespace = is_namespace, namespace = namespace)
 		else:
 			if is_name:
-				return self.language.set_var(t, name, name_2 = value)
+				return self.language.set_var(t, name, name_2 = value, namespace = namespace)
 			else:
-				return self.language.set_var(t, name, value)
+				return self.language.set_var(t, name, value, namespace = namespace)
 
 		return out + ";"
 
-	def compile_call_function(self, my_node, next_node, next_node_2, names, end = "@"):
+	def compile_call_function(self, my_node, next_node, next_node_2, names, end = "@", indent = 0, namespace = ""):
 		#TODO
 		if end == "@":
 			end = self.language.end
@@ -243,20 +253,20 @@ class compiler:
 				if names[my_node.value].type == FUNCTION:
 					func = None
 					if next_node_2 and next_node_2.type == FUNCTION:
-						func = self.compile(next_node_2.value, names = copy.deepcopy(names))
+						func = self.compile(next_node_2.value, names = copy.deepcopy(names), indent = indent + 1)
 
 					n = copy.deepcopy(names)
-					params = self.compile_array(next_node.value, names = n)
+					params = self.compile_array(next_node.value, names = n, namespace = namespace)
 					output_type = names[my_node.value].output
 					print(my_node.value, "", output_type)
 
 					if func != None:
-						out = self.language.get_code("functions/call/call-func", {"name" : self.language.get_name(my_node.value), "params" : params, "func" : func})
+						out = self.language.get_code("functions/call/call-func", {"name" : self.language.get_name(my_node.value, namespace = namespace), "params" : params, "func" : func})
 					else:
-						out = self.language.get_code("functions/call/call", {"name" : self.language.get_name(my_node.value), "params" : params}) + end
+						out = self.language.get_code("functions/call/call", {"name" : self.language.get_name(my_node.value, namespace = namespace), "params" : params}) + end
 
 				elif names[my_node.value].type == STR:
-					out = my_node.value + ".c_str()[" + self.compile_array(next_node.value, names = copy.deepcopy(names), char= "][") + "]" + end
+					out = my_node.value + ".c_str()[" + self.compile_array(next_node.value, names = copy.deepcopy(names), char= "][", namespace = namespace) + "]" + end
 					#TODO
 				else:
 					self.throw_error("type", my_node.line)
@@ -265,7 +275,7 @@ class compiler:
 
 		return out, names, output_type
 
-	def compile_calculation(self, data, names = {}, char = " "):
+	def compile_calculation(self, data, names = {}, char = " ", namespace = ""):
 		output = []
 		output_type = NUMBER
 		i = 0
@@ -274,33 +284,32 @@ class compiler:
 
 			if my_node.type == NAME:
 				#TODO
-				if my_node.value in ["+", "-", "*", "/", "%", "==", "!=", "<", ">"]:
+				if my_node.value in self.language.operators:
 					output.append(my_node.value)
 
-					if my_node.value in ["==", "!=", "<", ">"]:
+					if my_node.value in ["==", "!=", "<", ">", "and", "or"]:
 						output_type = BOOL
-				elif my_node.value == "and":
-					output.append("&&")
-					output_type = BOOL
-				elif my_node.value == "or":
-					output.append("||")
-					output_type = BOOL
+				elif my_node.value in self.language.operators_replace.keys():
+					output.append(self.language.operators_replace[my_node.value])
+
+					if my_node.value in ["==", "!=", "<", ">", "and", "or"]:
+						output_type = BOOL
 				elif my_node.value in names:
 					print("NAME ", my_node.value, " TYPE ", names[my_node.value].type)
 					if names[my_node.value].type == FLOAT:
 						output_type = FLOAT
-						output.append(self.language.get_name(my_node.value))
+						output.append(self.language.get_name(my_node.value, namespace = namespace))
 					if names[my_node.value].type == NUMBER:
-						output.append(self.language.get_name(my_node.value))
+						output.append(self.language.get_name(my_node.value, namespace = namespace))
 					if names[my_node.value].type == STR:
-						output.append(self.language.get_name(my_node.value))
+						output.append(self.language.get_name(my_node.value, namespace = namespace))
 
 						if output_type == NUMBER or output_type == FLOAT:
 							output_type = STR
 				else:
 					self.throw_error("undefined name", my_node.line, "\"" + my_node.value + "\"")
 			elif my_node.type == CALCULATION:
-				out, out_t = self.compile_calculation(my_node.value, names = names)
+				out, out_t = self.compile_calculation(my_node.value, names = names, namespace = namespace)
 				output.append(self.language.get_code("blocks/calculation", {"..." : out}))
 
 				if out_t == FLOAT:
@@ -320,7 +329,7 @@ class compiler:
 
 		return char.join(output), output_type
 
-	def compile_array(self, data, names = {}, char = "@"):
+	def compile_array(self, data, names = {}, char = "@", namespace = ""):
 		if char == "@":
 			char = self.language.array
 		output = []
@@ -336,17 +345,17 @@ class compiler:
 			if my_node.type == NAME:
 				if my_node.value in names:
 					if next_node and next_node.type == ARRAY:
-						out, names, out_t = self.compile_call_function(my_node, next_node, None, names, end = "")
+						out, names, out_t = self.compile_call_function(my_node, next_node, None, names, end = "", namespace = namespace)
 						output.append(out)
 						i += 1
 					else:
-						output.append(self.language.get_name(my_node.value))
+						output.append(self.language.get_name(my_node.value, namespace = namespace))
 				else:
 					self.throw_error("undefined name", my_node.line, "\"" + my_node.value + "\"")
 			elif my_node.type == NUMBER or my_node.type == BOOL or my_node.type == STR:
 				output.append(self.language.get_value(my_node.type, my_node.value))
 			elif my_node.type == CALCULATION:
-				out, out_t = self.compile_calculation(my_node.value, names = names)
+				out, out_t = self.compile_calculation(my_node.value, names = names, namespace = namespace)
 				output.append(out)
 
 			i += 1

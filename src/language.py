@@ -15,6 +15,15 @@ class language:
 		if "end-namespace" in self.data:
 			self.end_namespace = self.data["end-namespace"]
 
+		self.operators = self.data["calculations/operators"].split("|")
+
+		x = self.data["calculations/operators-replace"].replace("\\|", "!pipe").split("|")
+		self.operators_replace = {}
+		for it in range(0, len(x), 2):
+			self.operators_replace[x[it]] = x[it+1].replace("!pipe", "|")
+
+		self.keywords = self.data["keywords"].split("|")
+
 	def parse(self):
 		lines = self.string.split("\n")
 
@@ -75,32 +84,39 @@ class language:
 		else:
 			return value
 
-	def get_name(self, name):
-		if name.split("->")[0] in self.data["keywords"].split("|"):
-			name = "var_" + name
+	def get_name(self, name, namespace = ""):
+		o = []
+		for n in name.split("->"):
+			if n in self.keywords:
+				o.append("var_" + n)
+			else:
+				o.append(n)
+
+		name = "->".join(o)
 
 		name = name.replace("->", self.data["scope"])
+
 		return name
 
-	def set_var(self, t, name, value = None, name_2 = None, is_namespace = False):
+	def set_var(self, t, name, value = None, name_2 = None, is_namespace = False, namespace = ""):
 		e = self.end
 
 		if value != None:
-			return self.get_code("set-var", {"name" : self.get_name(name), "value" : self.get_value(t, value)}) + self.end
+			return self.get_code("set-var", {"name" : self.get_name(name, namespace = namespace), "value" : self.get_value(t, value)}) + self.end
 		else:
-			return self.get_code("set-var", {"name" : self.get_name(name), "value" : self.get_name(name_2)}) + self.end
+			return self.get_code("set-var", {"name" : self.get_name(name, namespace = namespace), "value" : self.get_name(name_2, namespace = namespace)}) + self.end
 
-	def define_var(self, t, name, value = None, name_2 = None, is_namespace = False):
+	def define_var(self, t, name, value = None, name_2 = None, is_namespace = False, namespace = ""):
 		if is_namespace and "define-var-namespace" in self.data:
 			if value != None:
 				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_value(t, value)}) + self.end
 			else:
-				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_name(name_2)}) + self.end
+				return self.get_code("define-var-namespace", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_name(name_2, namespace = namespace)}) + self.end
 		else:
 			if value != None:
 				return self.get_code("define-var", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_value(t, value)}) + self.end
 			else:
-				return self.get_code("define-var", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_name(name_2)}) + self.end
+				return self.get_code("define-var", {"type" : self.get_type(t), "name" : self.get_name(name), "value" : self.get_name(name_2, namespace = namespace)}) + self.end
 
 if __name__ == "__main__":
 	my_language = language("languages/cpp.txt")

@@ -5,7 +5,7 @@ file_ending:
 	.cpp
 
 keywords:
-	for|int|float|short|long|byte|while|if|do|switch|case
+	for|int|float|short|long|byte|do|switch|case
 
 end:
 	;
@@ -27,6 +27,15 @@ define-var:
 
 set-var:
 	...name... = ...value...
+
+calculations:
+	operators:
+		+|-|*|/|%|==|<|>
+	operators-replace:
+		and|&&|or|\|\|
+	string-add:
+		+
+
 
 blocks:
 	function:

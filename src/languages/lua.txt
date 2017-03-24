@@ -8,7 +8,7 @@ end:
 	\e
 
 keywords:
-	for|if|while|end|do|local|dofile|print|io|os
+	end|do|local|dofile|print|io|os
 
 end-namespace:
 	,\n
@@ -43,6 +43,14 @@ blocks:
 		(...value...)
 	namespace:
 		...name... = {\n...value...\n}
+
+calculations:
+	operators:
+		+|-|*|/|%|==|<|>|and|or
+	operators-replace:
+		!=|~=
+	string-add:
+		..
 
 parameter:
 	...value...
@@ -86,7 +94,7 @@ functions:
 		call:
 			...name...(...params...)
 		call-func:
-			...name...(...params...) {\n...func...\n}
+			...name...(...params...) then\n...func...\nend
 	define:
 		main:
 			function main() \n...value...\nend
