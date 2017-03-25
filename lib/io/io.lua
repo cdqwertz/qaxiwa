@@ -31,7 +31,7 @@ var_io = {
 	end,
 
 	input = function(text)
-		write(text)
+		var_io.write(text)
 		local s = ""
 		s = io.read()
 		return(s)
