@@ -1,0 +1,8 @@
+{"params": [{"type": 2, "name": "path"}], "type": 6, "name": "io->load_file", "output": 2}
+{"params": [{"type": 2, "name": "content"}, {"type": 2, "name": "path"}], "type": 6, "name": "io->save_file", "output": -1}
+{"type": 8, "name": "io"}
+{"params": [{"type": 2, "name": "text"}], "type": 6, "name": "io->input", "output": 2}
+{"params": [], "type": 6, "name": "io->read_float", "output": 4}
+{"params": [{"type": 2, "name": "text"}], "type": 6, "name": "io->write", "output": -1}
+{"params": [{"type": 2, "name": "text"}], "type": 6, "name": "io->print", "output": -1}
+{"params": [], "type": 6, "name": "io->read", "output": 1}

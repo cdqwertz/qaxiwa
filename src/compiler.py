@@ -1,4 +1,4 @@
-import utils, copy, sys
+import utils, copy, sys, os, json
 from parser import *
 
 class var:
@@ -8,6 +8,17 @@ class var:
 		self.params = params
 		self.output = output
 
+	def get_dict(self):
+		if self.type == FUNCTION:
+			p = []
+			for i in self.params.keys():
+				p.append(self.params[i].get_dict())
+			d = {"name" : self.name, "type" : self.type, "params" : p, "output" : self.output}
+			return d
+		else:
+			d = {"name" : self.name, "type" : self.type}
+			return d
+
 class compiler:
 	def __init__(self, language):
 		self.language = language
@@ -16,13 +27,20 @@ class compiler:
 		out = self.language.data["file-start"]
 
 		names = {}
-		for i in ["read", "print", "write", "if", "while", "for", "return"]:
+		for i in ["if", "while", "for", "return"]:
 			if not("functions/built-in/" + i + "/custom" in self.language.data) and not("functions/built-in/" + i + "/custom-params" in self.language.data):
 				names[i] = var(FUNCTION, i)
 
 		out += self.compile(data, names = names)
 
 		out += self.language.data["file-end"]
+
+		names_str = []
+		for n in names.keys():
+			if not(n in ["if", "while", "for", "return"]):
+				names_str.append(json.dumps(names[n].get_dict()))
+
+		utils.save_file("names.txt", "\n".join(names_str))
 
 		return out
 
@@ -73,9 +91,31 @@ class compiler:
 						if my_node.value == "@" + self.language.get_code("name"):
 							output.append(self.indent_text(next_node.value, indent))
 						elif my_node.value == "@load":
-							output.append("#include \"" + next_node.value + "\"")
+							output.append(self.language.get_code("import", {"name" : next_node.value}))
 						elif my_node.value == "@import":
-							output.append("#include <" + next_node.value + ">")
+							#TODO
+							l = os.getcwd().split(os.path.sep)
+							l.pop()
+							l.append("lib")
+							l.append(next_node.value)
+							l2 = copy.deepcopy(l)
+							l3 = copy.deepcopy(l)
+							l2.append(next_node.value + self.language.data["file_ending"])
+							l3.append("names.txt")
+							p1 = os.path.sep.join(l2)
+							p2 = os.path.sep.join(l3)
+							output.append(self.language.get_code("import", {"name" : p1}))
+
+							for line in utils.load_file(p2).split("\n"):
+								obj = json.loads(line)
+								params = {}
+								print(obj)
+								if "params" in obj:
+									for it in obj["params"]:
+										params[it["name"]] = var(it["type"], it["name"])
+									names[obj["name"]] = var(obj["type"], obj["name"], params, obj["output"])
+								else:
+									names[obj["name"]] = var(obj["type"], obj["name"])
 
 						i += 1
 				elif next_node and next_node.type == NAME and next_node.value == "=":

@@ -10,6 +10,9 @@ end:
 keywords:
 	end|do|local|dofile|print|io|os
 
+import:
+	dofile("...name...")
+
 end-namespace:
 	,\n
 

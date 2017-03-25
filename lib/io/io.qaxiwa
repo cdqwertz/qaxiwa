@@ -53,7 +53,7 @@ io = !{
 	}
 
 	input(text : str) : str = {
-		write(text)
+		io->write(text)
 		s = ""
 		@cpp "std::getline(std::cin, s);"
 		@lua "s = io.read()"

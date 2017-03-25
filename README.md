@@ -8,6 +8,8 @@ See LICENSE.txt
 ### Examples
 Hello World:
 ```c++
+@import "io"
+
 main = {
 	io->print("Hello World")
 }
@@ -15,6 +17,8 @@ main = {
 
 Add 2 numbers:
 ```c++
+@import "io"
+
 main = {
 	a = io->read()
 	b = io->read()

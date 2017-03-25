@@ -1,5 +1,7 @@
 # Calculations
 ```c++
+@import "io"
+
 main = {
 	a = 2
 	b = 1
@@ -9,6 +11,8 @@ main = {
 ```
 
 ```c++
+@import "io"
+
 main = {
 	a = 0
 	b = 1
