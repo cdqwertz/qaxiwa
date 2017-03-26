@@ -82,6 +82,10 @@ functions:
 		if:
 			name:
 				if
+			custom:
+				...name...(...params...)
+			custom-func:
+				...name...(...params...) then\n...func...\nend
 		while:
 			name:
 				while
@@ -97,7 +101,7 @@ functions:
 		call:
 			...name...(...params...)
 		call-func:
-			...name...(...params...) then\n...func...\nend
+			...name...(...params...) do\n...func...\nend
 	define:
 		main:
 			function main() \n...value...\nend\n\nmain()

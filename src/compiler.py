@@ -28,7 +28,7 @@ class compiler:
 
 		names = {}
 		for i in ["if", "while", "for", "return"]:
-			if not("functions/built-in/" + i + "/custom" in self.language.data) and not("functions/built-in/" + i + "/custom-params" in self.language.data):
+			if not("functions/built-in/" + i + "/custom-params" in self.language.data):
 				names[i] = var(FUNCTION, i)
 
 		out += self.compile(data, names = names)
@@ -305,10 +305,15 @@ class compiler:
 					output_type = names[my_node.value].output
 					print(my_node.value, "", output_type)
 
+					path = "functions/call/call"
+
+					if "functions/built-in/" + my_node.value + "/custom" in self.language.data:
+						path = "functions/built-in/" + my_node.value + "/custom"
+
 					if func != None:
-						out = self.language.get_code("functions/call/call-func", {"name" : self.language.get_name(my_node.value, namespace = namespace), "params" : params, "func" : func})
+						out = self.language.get_code(path + "-func", {"name" : self.language.get_name(my_node.value, namespace = namespace), "params" : params, "func" : func})
 					else:
-						out = self.language.get_code("functions/call/call", {"name" : self.language.get_name(my_node.value, namespace = namespace), "params" : params}) + end
+						out = self.language.get_code(path, {"name" : self.language.get_name(my_node.value, namespace = namespace), "params" : params}) + end
 
 				elif names[my_node.value].type == STR:
 					out = my_node.value + ".c_str()[" + self.compile_array(next_node.value, names = copy.deepcopy(names), char= "][", namespace = namespace) + "]" + end
@@ -452,9 +457,14 @@ class compiler:
 				return self.language.get_type(types[name]), types[name], [types[name]]
 
 	def get_list_types(self, v):
-		#TODO check for data type
 		if len(v) > 0:
 			item = v[0]
+
+			#TODO: d = (((1)) (("Hello")))
+			for i in v:
+				if i.type != item.type:
+					self.throw_error("type error", i.line)
+
 			if item.type == ARRAY:
 				list_types = [ARRAY]
 				list_types = list_types + self.get_list_types(item.value)
