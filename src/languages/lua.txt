@@ -26,7 +26,7 @@ file-start:
 	\e
 
 file-end:
-	\n\nmain()
+	\e
 
 define-var:
 	local ...name... = ...value...
@@ -100,7 +100,7 @@ functions:
 			...name...(...params...) then\n...func...\nend
 	define:
 		main:
-			function main() \n...value...\nend
+			function main() \n...value...\nend\n\nmain()
 		no-params:
 			...name... = function() \n...value...\nend
 		no-return-value:

@@ -42,6 +42,8 @@ def parse(string, line = 1):
 	number_mode = 0
 	my_number = ""
 
+	is_comment = False
+
 	z = 0
 	block_type = 0
 	block_start = 0
@@ -49,11 +51,15 @@ def parse(string, line = 1):
 
 	for i, token in enumerate(string):
 		if z == 0:
-			if is_str:
+			if is_comment:
+				pass
+			elif is_str:
 				if token == "\"":
 					data.append(node(STR, my_str, line))
 					is_str = False
 					my_str = ""
+				elif token == "\n":
+					my_str += "\\n"
 				else:
 					my_str += token
 			elif is_number:
@@ -166,6 +172,8 @@ def parse(string, line = 1):
 						data.append(node(NAME, my_name, line))
 					my_name = ""
 					block_mode = 1
+				elif token == "#":
+					is_comment = True
 				else:
 					my_name += token
 
@@ -234,7 +242,8 @@ def parse(string, line = 1):
 						data.append(node(CALCULATION, parse(my_name, block_start), line))
 
 		if token == "\n":
-			print(line)
+			#print(line)
 			line += 1
+			is_comment = False
 
 	return data
