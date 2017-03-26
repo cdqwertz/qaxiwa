@@ -194,6 +194,11 @@ class compiler:
 									output.append(self.indent_text(self.language.get_code("blocks/namespace", {"name" : self.language.get_name(my_node.value), "value" : self.compile(next_node_2.value, names = names, namespace = namespace + my_node.value + "->", is_namespace = True, indent = indent + 1)}), indent))
 									names[namespace + my_node.value] = var(NAMESPACE, namespace + my_node.value)
 									i += 2
+								elif t == ARRAY:
+									list_types = self.get_list_types(next_node_2.value)
+									list_types = [ARRAY] + list_types
+									output.append(self.indent_text(self.compile_var(t, my_node.value, self.compile_array(next_node_2.value, copy.deepcopy(names), namespace = namespace), True, is_namespace = is_namespace, list_types = list_types), indent))
+									i += 2
 				elif next_node and next_node.type == ARRAY:
 					next_node_4 = None
 					if i+4 < len(data):
@@ -237,14 +242,14 @@ class compiler:
 
 		return char.join(output)
 
-	def compile_var(self, t, name, value, new = False, is_name = False, is_namespace = False, namespace = ""):
+	def compile_var(self, t, name, value, new = False, is_name = False, is_namespace = False, namespace = "", list_types = []):
 		out = ""
 
 		if new:
 			if is_name:
-				return self.language.define_var(t, name, name_2 = value, is_namespace = is_namespace, namespace = namespace)
+				return self.language.define_var(t, name, name_2 = value, is_namespace = is_namespace, namespace = namespace, list_types = list_types)
 			else:
-				return self.language.define_var(t, name, value, is_namespace = is_namespace, namespace = namespace)
+				return self.language.define_var(t, name, value, is_namespace = is_namespace, namespace = namespace, list_types = list_types)
 		else:
 			if is_name:
 				return self.language.set_var(t, name, name_2 = value, namespace = namespace)
@@ -307,6 +312,9 @@ class compiler:
 
 				elif names[my_node.value].type == STR:
 					out = my_node.value + ".c_str()[" + self.compile_array(next_node.value, names = copy.deepcopy(names), char= "][", namespace = namespace) + "]" + end
+					#TODO
+				elif names[my_node.value].type == ARRAY:
+					pass
 					#TODO
 				else:
 					self.throw_error("type", my_node.line)
@@ -397,7 +405,8 @@ class compiler:
 			elif my_node.type == CALCULATION:
 				out, out_t = self.compile_calculation(my_node.value, names = names, namespace = namespace)
 				output.append(out)
-
+			elif my_node.type == ARRAY:
+				output.append(self.language.get_code("types/list/pattern", {"..." : self.compile_array(my_node.value, names, namespace = namespace)}))
 			i += 1
 
 		return char.join(output)
@@ -420,7 +429,7 @@ class compiler:
 
 			if next_node and next_node_2:
 				if my_node.type == NAME and next_node.type == NAME and next_node.value == ":" and next_node_2.type == NAME:
-					t, t2 = self.get_type(next_node_2.value)
+					t, t2, t3 = self.get_type(next_node_2.value)
 					if t:
 						out.append(self.language.get_code("parameter", {"type" : t, "value" : my_node.value}))
 						params[my_node.value] = var(t2, my_node.value)
@@ -431,8 +440,24 @@ class compiler:
 		return ", ".join(out), params
 
 	def get_type(self, name):
-		#TODO
-		types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float", "int" : "int"}
-		types_2 = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT, "int" : NUMBER}
-		if name in types.keys():
-			return types[name], types_2[name]
+		t = name.split("->")
+		if t[0] == "list":
+			t.pop(0)
+			t, t2, t3 = self.get_type("->".join(t))
+			return self.language.get_type(ARRAY, list_types = [ARRAY] + t3), ARRAY, [ARRAY] + t3
+		else:
+			#types = {"number" : "int", "str" : "std::string", "bool" : "bool", "float" : "float", "int" : "int", "list" : "list"}
+			types = {"number" : NUMBER, "str" : STR, "bool" : BOOL, "float" : FLOAT, "int" : NUMBER, "list" : ARRAY}
+			if name in types.keys():
+				return self.language.get_type(types[name]), types[name], [types[name]]
+
+	def get_list_types(self, v):
+		#TODO check for data type
+		if len(v) > 0:
+			item = v[0]
+			if item.type == ARRAY:
+				list_types = [ARRAY]
+				list_types = list_types + self.get_list_types(item.value)
+				return list_types
+			else:
+				return [item.type]
